@@ -1,8 +1,8 @@
-import UserForm from "../user-form";
+import ListUser from "../list-user";
 
 function HomePage() {
   return ( 
-    <UserForm />
+    <ListUser />
    );
 }
 
