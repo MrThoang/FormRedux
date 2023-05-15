@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiClient } from '../../config/api';
 import {
     Table,
     Thead,
@@ -27,10 +26,9 @@ import {
     ModalBody,
     ModalCloseButton,
 } from '@chakra-ui/react';
-import { fetchUserById } from '../../services/auth';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { getListUser, getUserBuyId } from '../../redux/slice/user';
+import { getListUser, getUserBuyId } from '../../redux/apiRequests';
 
 
 function ListUser() {
@@ -38,47 +36,26 @@ function ListUser() {
     const [userEdit, setUserEdit] = useState();
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [valueCheck, setValueCheck] = useState('');
-    const [editId, setEditId] = useState('')
 
     const initialRef = useRef(null);
 
     const dispatch = useDispatch()
 
-    const stateListUser = useSelector((state) => state)
-    const stateUserBuyId = useSelector((state) => state)
+    const user = useSelector((state) => state?.user)
 
     useEffect(() => {
-        dispatch(getListUser())
-        setListUser(stateListUser?.user?.data?.data)
+        getListUser(dispatch)
+        setListUser(user?.data?.data)
     }, []);
 
 
     const handleEditUser = (id) => {
         if(id) {
           onOpen()
-        //   setEditId(id)
-        dispatch(getUserBuyId(id))
+          getUserBuyId(id, dispatch)
+          setUserEdit(user?.data?.data)
         }
     }
-
-    // const fetchApiUserById = (userId) => {
-    //     fetchUserById(userId)
-    //       .then((res) => {
-    //           if (res) {
-    //             setUserEdit(res?.data);
-    //             setValueCheck(userEdit?.gender)
-    //             console.log(res);
-    //           }
-    //       })
-    //       .catch((error) => {
-    //           console.log(error);
-    //       });
-    // };
-
-    // useEffect(() => {
-    //   fetchApiUserById(editId);
-    // }, [editId]);
-
 
     return (
         <div className="p-8">
