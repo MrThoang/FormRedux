@@ -123,9 +123,11 @@ function ListUser() {
         <div className="p-8">
             <div className="flex justify-between">
                 <h1 className="text-3xl mb-4">List User</h1>
-                <Button>
-                    <Link to={'/create'}>Add</Link>
-                </Button>
+                <Link to={'/create'}>
+                    <Button colorScheme='teal' size='md'> 
+                        Add
+                    </Button>
+                </Link>
             </div>
             <TableContainer>
                 <Table variant="striped" colorScheme="teal">
