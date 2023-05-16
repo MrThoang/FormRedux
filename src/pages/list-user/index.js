@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Table,
     Thead,
@@ -27,35 +27,97 @@ import {
     ModalCloseButton,
 } from '@chakra-ui/react';
 
-import { useDispatch, useSelector } from 'react-redux';
-import { getListUser, getUserBuyId } from '../../redux/apiRequests';
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteUserApi, editUserApi, getListUser } from '../../redux/apiRequests';
+import { useFormik } from 'formik';
 
 function ListUser() {
-    const [listUser, setListUser] = useState([]);
     const [userEdit, setUserEdit] = useState();
+    const [userDelete, setUserDelete] = useState();
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const [valueCheck, setValueCheck] = useState('');
+    const { isOpen: isOpenConfirm, onOpen: onOpenConfirm, onClose: onCloseConfirm } = useDisclosure();
+    const [valueCheck, setValueCheck] = useState();
 
     const initialRef = useRef(null);
 
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
-    const user = useSelector((state) => state?.user)
+    const user = useSelector((state) => state?.user);
+
+    const fetchApiList = () => {
+        getListUser(dispatch);
+    };
 
     useEffect(() => {
-        getListUser(dispatch)
-        setListUser(user?.data?.data)
+        fetchApiList();
     }, []);
 
+    const listUser = useMemo(() => user?.data, [user?.data]);
+
+    const formik = useFormik({
+        initialValues: {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+        },
+        onSubmit: (values) => {
+            if (values) {
+                const payload = {
+                    first_name: values.firstName,
+                    last_name: values.lastName,
+                    email: values.email,
+                    gender: valueCheck,
+                    phone: values.phone,
+                };
+                editUserApi(userEdit.id, payload, () => {
+                    fetchApiList();
+                });
+                onClose()
+            }
+        },
+    });
 
     const handleEditUser = (id) => {
-        if(id) {
-          onOpen()
-          getUserBuyId(id, dispatch)
-          setUserEdit(user?.data?.data)
+        if (id) {
+            onOpen();
+            const user = listUser?.find((user) => user.id === id);
+            setUserEdit(user);
+            setValueCheck(user?.gender);
+            console.log(valueCheck);
         }
-    }
+    };
+
+    useEffect(() => {
+        if(userEdit) {
+            formik.setValues({
+            firstName: userEdit.first_name,
+            lastName: userEdit.last_name,
+            email: userEdit.email,
+            phone: userEdit.phone,
+        });
+        }
+    },[userEdit])
+
+    const handleConfirmDelete = (userId) => {
+        onOpenConfirm();
+        setUserDelete(userId);
+    };
+
+    const handleDelete = () => {
+        if (userDelete) {
+            onCloseConfirm();
+            deleteUserApi(userDelete, () => fetchApiList());
+            setUserDelete('');
+        }
+    };
+
+    const handleCancelDelete = () => {
+        onCloseConfirm();
+        setUserDelete('');
+    };
 
     return (
         <div className="p-8">
@@ -82,12 +144,18 @@ function ListUser() {
                                 <>
                                     <Tr key={index}>
                                         <Td>{`${user?.first_name} ${user?.last_name}`}</Td>
-                                        <Td>{user?.gender}</Td>
+                                        <Td>{user?.gender === '1' ? 'Male' : 'Female'}</Td>
                                         <Td>{user?.email}</Td>
                                         <Td isNumeric>{user?.phone}</Td>
                                         <Td className="w-[10%]">
-                                            <Button onClick={() => handleEditUser(user.id)}>Edit</Button>
-                                            <Button>Delete</Button>
+                                            <div className="flex gap-2">
+                                                <Button onClick={() => handleEditUser(user.id)}>
+                                                    <EditIcon />
+                                                </Button>
+                                                <Button onClick={() => handleConfirmDelete(user.id)}>
+                                                    <DeleteIcon />
+                                                </Button>
+                                            </div>
                                         </Td>
                                     </Tr>
                                 </>
@@ -100,41 +168,84 @@ function ListUser() {
                 <Modal initialFocusRef={initialRef} isOpen={isOpen} onClose={onClose}>
                     <ModalOverlay />
                     <ModalContent>
+                            <form onSubmit={formik.handleSubmit}>
                         <ModalHeader>Edit User</ModalHeader>
                         <ModalCloseButton />
                         <ModalBody pb={6}>
-                            <FormControl>
-                                <FormLabel>First name</FormLabel>
-                                <Input placeholder="First name" value={userEdit?.first_name} />
-                            </FormControl>
-                            <FormControl>
-                                <FormLabel>Last name</FormLabel>
-                                <Input placeholder="Last name" value={userEdit?.last_name}/>
-                            </FormControl>
-                            <FormControl>
-                                <FormLabel>Gender</FormLabel>
-                                <RadioGroup onChange={setValueCheck} value={valueCheck}>
-                                    <Stack direction="row">
-                                        <Radio value="1">Male</Radio>
-                                        <Radio value="2">Female</Radio>
-                                    </Stack>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormControl>
-                                <FormLabel>Email</FormLabel>
-                                <Input placeholder="Email" value={userEdit?.email}/>
-                            </FormControl>
-                            <FormControl>
-                                <FormLabel>Phone</FormLabel>
-                                <Input placeholder="Phone" value={userEdit?.phone}/>
-                            </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>First name</FormLabel>
+                                    <Input
+                                        name="firstName"
+                                        value={formik.values.firstName}
+                                        type="text"
+                                        onChange={formik.handleChange}
+                                        placeholder="First name"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Last name</FormLabel>
+                                    <Input
+                                        name="lastName"
+                                        value={formik.values.lastName}
+                                        type="text"
+                                        onChange={formik.handleChange}
+                                        placeholder="Last name"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Gender</FormLabel>
+                                    <RadioGroup onChange={setValueCheck} value={valueCheck}>
+                                        <Stack direction="row">
+                                            <Radio value="1">Male</Radio>
+                                            <Radio value="2">Female</Radio>
+                                        </Stack>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Email</FormLabel>
+                                    <Input
+                                        name="email"
+                                        value={formik.values.email}
+                                        type="text"
+                                        onChange={formik.handleChange}
+                                        placeholder="Email"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Phone</FormLabel>
+                                    <Input
+                                        name="phone"
+                                        value={formik.values.phone}
+                                        type="text"
+                                        onChange={formik.handleChange}
+                                        placeholder="Phone"
+                                    />
+                                </FormControl>
                         </ModalBody>
-
                         <ModalFooter>
-                            <Button colorScheme="blue" mr={3}>
+                            <Button type="submit" colorScheme="blue" mr={3}>
                                 Save
                             </Button>
                             <Button onClick={onClose}>Cancel</Button>
+                        </ModalFooter>
+                            </form>
+                    </ModalContent>
+                </Modal>
+            </>
+            <>
+                <Modal initialFocusRef={initialRef} isOpen={isOpenConfirm} onClose={handleCancelDelete}>
+                    <ModalOverlay />
+                    <ModalContent>
+                        <ModalHeader>Confirm notification</ModalHeader>
+                        <ModalBody pb={6}>
+                            <p>Are you sure you want to delete this user</p>
+                        </ModalBody>
+
+                        <ModalFooter className="flex gap-4">
+                            <Button onClick={() => handleCancelDelete()}>Cancel</Button>
+                            <Button onClick={() => handleDelete()} colorScheme="red" mr={3}>
+                                Delete
+                            </Button>
                         </ModalFooter>
                     </ModalContent>
                 </Modal>

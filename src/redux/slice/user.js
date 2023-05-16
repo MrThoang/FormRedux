@@ -3,25 +3,27 @@ import { createSlice } from "@reduxjs/toolkit";
 const userSlice = createSlice({
     name: 'user',
     initialState: {
-        data: null,
+        data: [],
         pending: false,
         error: false,
     },
     reducers: {
-        getListUserSuccess: (state, action) => {
-            state.pending =false;
+        getListUserPending: (state, action) => {
+            state.pending = true; 
             state.error = false;
-            state.data = action.payload 
         },
-
-        getUserBuyIdSuccess: (state, action) => {
-            state.pending =false;
+        getListUserSuccess: (state, action) => {
+            state.pending = false; 
             state.error = false;
-            state.data = action.payload
-        }
+            state.data = action.payload.data 
+        },
+        getListUserError: (state, action) => {
+            state.pending = true; 
+            state.error = true;
+        },
     }
 })
 
-export const { getListUserSuccess, getUserBuyIdSuccess } = userSlice.actions
+export const { getListUserSuccess, getListUserError, getListUserPending } = userSlice.actions
 
 export default userSlice.reducer 
