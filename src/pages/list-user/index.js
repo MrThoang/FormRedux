@@ -52,6 +52,7 @@ function ListUser() {
 
     useEffect(() => {
         fetchApiList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const listUser = useMemo(() => user?.data, [user?.data]);
@@ -99,7 +100,7 @@ function ListUser() {
             phone: userEdit.phone,
         });
         }
-    },[userEdit])
+    },[formik, userEdit])
 
     const handleConfirmDelete = (userId) => {
         onOpenConfirm();
