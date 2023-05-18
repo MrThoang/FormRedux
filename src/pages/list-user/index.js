@@ -100,7 +100,8 @@ function ListUser() {
             phone: userEdit.phone,
         });
         }
-    },[formik, userEdit])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[userEdit])
 
     const handleConfirmDelete = (userId) => {
         onOpenConfirm();
